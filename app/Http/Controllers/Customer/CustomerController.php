@@ -214,7 +214,7 @@ class CustomerController extends Controller
                 if ($data_reminder_booking) {
                     return response()->json([
                         'message' => 'Inputed data is not valid',
-                        'errors' => $data_telephone,
+                        'errors' => $data_reminder_booking,
                     ], 422);
                 }
             }
@@ -264,7 +264,7 @@ class CustomerController extends Controller
                 if ($data_reminder_payment) {
                     return response()->json([
                         'message' => 'Inputed data is not valid',
-                        'errors' => $data_telephone,
+                        'errors' => $data_reminder_payment,
                     ], 422);
                 }
             }
@@ -314,7 +314,7 @@ class CustomerController extends Controller
                 if ($data_reminder_late_payment) {
                     return response()->json([
                         'message' => 'Inputed data is not valid',
-                        'errors' => $data_telephone,
+                        'errors' => $data_reminder_late_payment,
                     ], 422);
                 }
             }
@@ -627,6 +627,9 @@ class CustomerController extends Controller
             }
 
             //// INSERT CUSTOMER
+            $flag = false;
+            $res_data = [];
+            $files[] = $request->file('images');
 
             $lastInsertedID = DB::table('customer')
                 ->insertGetId([
@@ -754,24 +757,53 @@ class CustomerController extends Controller
                 }
             }
 
+            $count = 0;
 
-            if ($request->hasfile('image')) {
+            $ResImageDatas = json_decode($request->imagesName, true);
 
-                $files = $request->file('image');
+            if ($flag == false) {
 
-                $name = $files->hashName();
-                $files->move(public_path() . '/PetImages/', $name);
+                if ($request->hasfile('images')) {
+                    foreach ($files as $file) {
 
-                $fileName = "/PetImages/" . $name;
+                        foreach ($file as $fil) {
 
-                DB::table('petImages')
-                    ->insert([
-                        'usersId' => $lastInsertedID,
-                        'imagePath' => $fileName,
-                        'isDeleted' => 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                            $name = $fil->hashName();
+
+                            $fil->move(public_path() . '/PetImages/', $name);
+
+                            $fileName = "/PetImages/" . $name;
+
+                            DB::table('petImages')
+                            ->insert([
+                                'usersId' => $lastInsertedID,
+                                'imagePath' => $fileName,
+                                'labelName' => $ResImageDatas[$count]['name'],
+                                'realImageName' => $fil->getClientOriginalName(),
+                                'isDeleted' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+
+                            array_push($res_data, $file);
+
+                            $count += 1;
+                        }
+                    }
+
+                    $flag = true;
+                }
+            } else {
+
+                foreach ($res_data as $res) {
+                    DB::table('petImages')
+                        ->insert([
+                            'usersId' => $lastInsertedID,
+                            'imagePath' => $res['imagePath'],
+                            'labelName' => $res['labelName'],
+                            'realImageName' => $res['realImageName']
+                        ]);
+                }
             }
 
             if ($request->messenger) {

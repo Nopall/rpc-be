@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::create('petImages', function (Blueprint $table) {
             $table->id();
             $table->string('usersId');
+            $table->string('labelName');
+            $table->string('realImageName');
             $table->string('imagePath');
             $table->boolean('isDeleted');
             $table->timestamps();
